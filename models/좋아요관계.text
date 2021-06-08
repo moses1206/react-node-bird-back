@@ -1,0 +1,14 @@
+
+
+
+
+      User                    Like                    Post
+                      UserId      PostId
+                          1           3    
+                          1           5
+                          2           3
+                          2           4
+                          3           1
+                          3           2
+
+

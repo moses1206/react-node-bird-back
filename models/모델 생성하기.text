@@ -1,0 +1,31 @@
+
+PS D:\Dev\React\React-NodeBird\react-nodebird-back> npx sequelize db:create
+
+Sequelize CLI [Node: 14.16.0, CLI: 6.2.0, ORM: 6.6.2]
+
+Loaded configuration file "config\config.json".
+Using environment "development".
+Database react-nodebird created.
+
+
+
+PS D:\Dev\React\React-NodeBird\react-nodebird-back> node app
+Sever Start
+Executing (default): CREATE TABLE IF NOT EXISTS `Users` (`id` INTEGER NOT NULL auto_increment , `email` VARCHAR(30) NOT NULL UNIQUE, `nickname` VARCHAR(30) NOT NULL, `password` VARCHAR(100) NOT NULL, `createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;
+Executing (default): SHOW INDEX FROM `Users` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `Posts` (`id` INTEGER NOT NULL auto_increment , `content` TEXT NOT NULL, `createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, `UserId` INTEGER, `RetweetId` INTEGER, PRIMARY KEY (`id`), FOREIGN KEY (`UserId`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (`RetweetId`) REFERENCES `Posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
+Executing (default): SHOW INDEX FROM `Posts` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `Comments` (`id` INTEGER NOT NULL auto_increment , `content` TEXT NOT NULL, `createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, `PostId` INTEGER, `UserId` INTEGER, PRIMARY KEY (`id`), FOREIGN KEY (`PostId`) REFERENCES `Posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE, FOREIGN KEY (`UserId`) REFERENCES `Users` (`id`) ON DELETE SET NULL ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
+Executing (default): SHOW INDEX FROM `Comments` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `Images` (`id` INTEGER NOT NULL auto_increment , `src` VARCHAR(200) NOT NULL, `createdAt` DATETIME NOT NULL, `updatedAt` 
+DATETIME NOT NULL, `PostId` INTEGER, PRIMARY KEY (`id`), FOREIGN KEY (`PostId`) REFERENCES `Posts` (`id`) ON DELETE SET NULL ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;
+Executing (default): SHOW INDEX FROM `Images` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `Hashtags` (`id` INTEGER NOT NULL auto_increment , `name` VARCHAR(20) NOT NULL, `createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
+Executing (default): SHOW INDEX FROM `Hashtags` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `Like` (`createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, `PostId` INTEGER , `UserId` INTEGER , PRIMARY KEY (`PostId`, `UserId`), FOREIGN KEY (`PostId`) REFERENCES `Posts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (`UserId`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
+Executing (default): SHOW INDEX FROM `Like` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `PostHashtag` (`createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, `PostId` INTEGER , `HashtagId` INTEGER , PRIMARY KEY (`PostId`, `HashtagId`), FOREIGN KEY (`PostId`) REFERENCES `Posts` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (`HashtagId`) REFERENCES `Hashtags` (`id`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_general_ci;
+Executing (default): SHOW INDEX FROM `PostHashtag` FROM `react-nodebird`
+Executing (default): CREATE TABLE IF NOT EXISTS `Follow` (`createdAt` DATETIME NOT NULL, `updatedAt` DATETIME NOT NULL, `FollowingId` INTEGER , `FollowerId` INTEGER , PRIMARY KEY (`FollowingId`, `FollowerId`), FOREIGN KEY (`FollowingId`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE, FOREIGN KEY (`FollowerId`) REFERENCES `Users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE utf8_general_ci;
+Executing (default): SHOW INDEX FROM `Follow` FROM `react-nodebird`
+DB 연결 성공

@@ -9,12 +9,21 @@
 const express = require('express');
 const app = express();
 
+// DB 등록
+const db = require('./models');
+db.sequelize
+  .sync()
+  .then(() => {
+    console.log('DB 연결 성공');
+  })
+  .catch(console.error);
+
 // Import Router
 const postRouter = require('./routes/post');
 
 // Use Router
 app.use('/post', postRouter);
 
-app.listen(3065, () => {
-  console.log('Sever Start');
+app.listen(3060, () => {
+  console.log('Sever Start!');
 });
