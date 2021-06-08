@@ -20,10 +20,12 @@ db.sequelize
 
 // Import Router
 const postRouter = require('./routes/post');
+const userRouter = require('./routes/user');
 
 // Use Router
 app.use('/post', postRouter);
+app.use('/user', userRouter);
 
-app.listen(3060, () => {
+app.listen(3065, () => {
   console.log('Sever Start!');
 });
