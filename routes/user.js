@@ -13,7 +13,7 @@ router.post('/', async (req, res) => {
     password: req.body.password,
   });
 
-  res.json(res.response);
+  res.send('Sign Up ');
 });
 
 module.exports = router;
