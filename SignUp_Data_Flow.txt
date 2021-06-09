@@ -1,0 +1,72 @@
+1.프론트서버 회원가입폼 입력후 Submit을 누른다.
+    const onSubmit = useCallback(() => {
+        if (password !== passwordCheck) {
+        return setPasswordError(true);
+        }
+        if (!term) {
+        return setTermError(true);
+        }
+        dispatch({ type: SIGN_UP_REQUEST, data: { email, password, nickname } });
+    }, [password, passwordCheck, term]);
+
+2.Saga Generator에서 듣고 signUp function을 실행한다. 
+    
+    function* watchSignUp() {
+        yield takeLatest(SIGN_UP_REQUEST, signUp);
+    }
+    
+    (프론트에서 서버로 데이터를 보낼때는 post put patch를 사용한다. 나머지는 데이터를 넘길 수 없다.)
+    function signUpAPI(data) {
+      return axios.post('http://localhost:3065/user', data); <== data:{email,password,nickname}
+                                                                 서버 라우터에 데이터랑 함께 보내준다.
+    }
+    
+    function* signUp(action) {
+      try {
+        const result = yield call(signUpAPI, action.data); <== action.data에 email,password,nickname 이들어있따.
+                        이걸 서버에 보내주고 응답을 result에 저장한다.
+        ##### Server Start################################################################################
+        router.post('/', async (req, res, next) => {
+            const hashPassword = await bcrypt.hash(req.body.password, 12); //10~13 사용하는데 높을수록 얌호화가 높다.
+          
+            // await 붙으면 try catch 구문을 통해 에러를 잡아주어야 한다.
+            try {
+              // 먼저 서버에서 이메일 중복이 있는지 검사한다.
+              const exUser = await User.findOne({
+                where: {
+                  email: req.body.email,
+                },
+              });
+              if (exUser) {
+                // return 을 붙이지 않으면 응답이 2번되는 에러가 발생한다.1번요청 1번응답
+                // 꼭 return 을 붙여서 라우터를 종료해줘야한다.
+                // return을 넣지않으면 can't set headers already sent 에러메시지 발생
+                return res.status(403).send('이미 사용중인 아이디 입니다.');
+              }
+          
+              await User.create({
+                email: req.body.email,
+                nickname: req.body.nickname,
+                password: req.body.password,
+              });
+          
+              res.status(200).send('회원가입이 완료되었습니다.!!');
+            } catch (error) {
+              console.error(error);
+              // 넥스트를 통해서 에러를 처리하면 한방에 처리된다.
+              next(error);
+            }
+          });
+
+        ##### Server End################################################################################
+
+        yield put({
+          type: SIGN_UP_SUCCESS,
+        });
+      } catch (err) {
+        yield put({
+          type: SIGN_UP_FAILURE,
+          error: err.response.data,
+        });
+      }
+    }

@@ -1,0 +1,36 @@
+router.post('/', async (req, res, next) => {
+    // await 붙으면 try catch 구문을 통해 에러를 잡아주어야 한다.
+    try {
+      // 먼저 서버에서 이메일 중복이 있는지 검사한다.
+      const exUser = await User.findOne({
+        where: {
+          email: req.body.email,
+        },
+      });
+      if (exUser) {
+        // return 을 붙이지 않으면 응답이 2번되는 에러가 발생한다.1번요청 1번응답
+        // 꼭 return 을 붙여서 라우터를 종료해줘야한다.
+        // return을 넣지않으면 can't set headers already sent 에러메시지 발생
+        // 클라이언트에서 잘못된 정보를 입력했기때문에 400번 에러를 돌려준다.
+        ###############################################################################
+        return res.status(403).send('이미 사용중인 아이디 입니다.'); <=== 에러가 발생하면
+        ###################################################################################
+      }
+
+      function* signUp(action) {
+        try {
+          const result = yield call(signUpAPI, action.data);
+          console.log(result);
+          yield delay(1000);
+          yield put({
+            type: SIGN_UP_SUCCESS,
+          });
+        } catch (err) {
+          yield put({
+            type: SIGN_UP_FAILURE,
+            error: err.response.data,  <<============== 여기로 메시지가 들어간다.
+          });
+        }
+      }
+
+      error가 User 리듀서의  signUpError로 값이 들어가게 된다.

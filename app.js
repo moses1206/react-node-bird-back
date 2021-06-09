@@ -8,6 +8,7 @@
 
 const express = require('express');
 const app = express();
+const cors = require('cors');
 
 // DB 등록
 const db = require('./models');
@@ -17,6 +18,17 @@ db.sequelize
     console.log('DB 연결 성공');
   })
   .catch(console.error);
+
+// 프론트의 데이터를 req.body 에 넣어주는 역할을 한다.
+// 라우터 위에 올려야한다. 위에서 아래로 읽기때문이다.
+app.use(express.json()); // 프론트에서 json형태를 req.body 에 넣어준다.
+app.use(express.urlencoded({ extended: true })); //form data를 req.body에 넣어준다.
+app.use(
+  cors({
+    origin: true,
+    credentials: false,
+  })
+);
 
 // Import Router
 const postRouter = require('./routes/post');
