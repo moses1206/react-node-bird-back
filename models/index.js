@@ -5,7 +5,7 @@ const Sequelize = require('sequelize');
 const env = process.env.NODE_ENV || 'development';
 
 // config안에 3가지 버전중에 development를 가져와라.
-const config = require('../config/config.json')[env];
+const config = require('../config/config.js')[env];
 
 const db = {};
 

@@ -1,8 +1,42 @@
 const express = require('express');
 const { User } = require('../models');
 const bcrypt = require('bcrypt');
+const passport = require('passport');
 
 const router = express.Router();
+
+// @route   POST    /user/login
+// @desc    Login User
+// @access  Public
+// 패스포트 전략 적용을 위해 passport.authenticate('local')을 사용
+// 패스포트에서 (서버에러,로그인정보,클라이언트에러) 정보가 라우터에
+// (err,user,info)로 전달된다.
+// passport를 사용할 수 있게 미들웨어 확장을 이용한다.
+router.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    // 서버에러가 발생한다면
+    if (err) {
+      console.error(err);
+      return next(err);
+    }
+    // 클라이언트 에러 (입력된 아이디 비밀번호 오류)
+    // 클라이언트에 info.reason으로 메시지를 전달한다.
+    // 401 인증에 실패함.
+    if (info) {
+      return res.status(401).send(info.reason);
+    }
+
+    // 성공하게 되면 패스포트 로그인을 시도한다.
+    return req.login(user, async (loginErr) => {
+      if (loginErr) {
+        console.error(loginErr);
+        return next(loginErr);
+      }
+      // 사용자 정보를 프론트로 넘겨준다.
+      return res.status(200).json(user);
+    });
+  })(req, res, next);
+});
 
 // @route   POST    /user
 // @desc    Sign Up User

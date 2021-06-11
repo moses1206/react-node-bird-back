@@ -1,0 +1,132 @@
+Q. 쿠키 , 세션일 필요한 이유
+  1. 쿠키는 방문자의 정보를 방문자 컴퓨터의 메모리에 저장하는 것을 말한다
+  2. 세션(Session)이란 일정 시간동안 같은 사용자(정확하게 브라우저를 말한다)로 부터 들어오는 
+     일련의 요구를 하나의 상태로 보고 그 상태를 일정하게 유지시키는 기술이다. 방문자의 요청에 
+     따른 정보를 방문자 메모리에 저장하는 것이 아닌 웹 서버가 세션 아이디 파일을 만들어 서비스가 
+     돌아가고 있는 서버에 저장하는 것이다. 서버에 저장되기 때문에 사용자 정보가 노출되지 않는다.
+
+ - 프론트서버(3060)와 백엔드서버(3065)에서는 같은 정보를 가지고 있어야한다.
+ - 로그인을 하면 백엔드에서 프론트에 누가 로그인을했는지 정보를 보내주어야한다.
+ - 보내주는 정보에 아이디,닉네임,비밀번호등이 들어가는데 비밀번호 노출로 해킹에 취약하게된다.
+ - 그래서 랜덤한 정보(쿠키)(예: cxlhy)를 프론트로 보내준다.
+ - 서버에서 사용자의 모든정보를 들고있다면 메모리과잉으로 서버가 터질수 있따. 그래서 서버에서 ID만 저장하고 있다
+ - 나중에는 서버에서 세션 저장용 DB로 redis를 사용합니다.
+ - 서버에서는 로그인정보(email,nickname,password)가 쿠키(cxlhy)의 ID와 연결되어었다.(세션)
+ - 서버에서쿠키의 정보와 사용자정보를 연결한것을 세션이라고 한다.
+ - 로그인후 Post,Comment 작성시 서버에 쿠키랑 같이 보내주면 서버는 제로초가 글, 댓글을 달았군하, 이렇게 알아듣게된다.
+ - 
+
+<패스포트 등록>
+1. 패스포트 , 세션 , 쿠키파서 설치
+  PS D:\Dev\React\react-nodebird\react-nodebird-back> npm i passport passport-local
+  PS D:\Dev\React\react-nodebird\react-nodebird-back> npm i express-session
+  PS D:\Dev\React\react-nodebird\react-nodebird-back> npm install cookie-parser
+  passport : 모든 로그인을 한꺼번에 관리해주는 라이브러리
+  passport-local : 아이디,이메일  + 비밀번호 로 로그인을 하게 해준다.
+
+2. 루트에서 passport 폴더생성  파일생성 index.js , local.js
+- index.js는 app.js에서 실행되며
+- local.js는 index.js에서 실행된다.
+
+3. app.js에서 passport 등록
+const passportConfig = require('./passport');
+passportConfig();
+// PassPort(로그인) 설정
+const passportConfig = require('./passport');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+
+4. app.js에서 Middleware 등록
+// Login & Session Middleware
+app.use(cookieParser());
+app.use(session());
+app.use(passport.initialize());
+app.use(passport.session());
+
+<Login Flow>
+ - LoginForm에서 이메일 비밀번호를 입력하고 Submit Click
+const onSubmitForm = useCallback(() => {
+  dispatch(
+    loginRequestAction({
+      email,
+      password,
+    })
+  );
+}, [email, password]);
+
+ - Saga에서 
+    function logInAPI(data) {
+      return axios.post('/user/login', data);
+    }
+
+    function* logIn(action) {
+      try {
+        const result = yield call(logInAPI, action.data);
+     
+    "http://localhost:3065/user/login" 으로 이메일 패스워드를 담아서 data로 넘겨준다.
+    req.body로 데이터가 서버로 넘겨진다.
+
+  - 서버 라우터에서
+  router.post('/login', (req, res, next) => {
+    passport.authenticate('local', (err, user, info) => {
+  local에 req.body.email , req.body.password가 넘겨지면서 local.js가 실행된다.
+
+    1. 실패하면
+    if (!user) {
+      return done(null, false, {
+        reason: '존재하지 않는 아이디 입니다.!!',
+      });
+    }
+    return done(null, false, { reason: '잘못된 비밀번호 입니다.!!' });
+
+  
+    2.성공하면
+    if (result) {
+      // true면 서버에러는 null , 프론트에 사용자(user) 정보를 넘겨준다.
+      return done(null, user);
+    }
+
+    3. 라우터에서 다음으로 넘어가고 패스포트 로그인을 시도한다.      
+        passport.authenticate('local', (err, user, info) => {
+            // 서버에러가 발생한다면
+            if (err) {
+              console.error(err);
+              return next(err);
+            }
+            // 클라이언트 에러 (입력된 아이디 비밀번호 오류)
+            if (info) {
+              return res.status(401).send(info.reason);
+            }
+            // 성공하게 되면 패스포트 로그인을 시도한다.
+            return req.login(user, async (loginErr) => {
+              if (loginErr) {
+                console.error(loginErr);
+                return next(loginErr);
+              }
+              // 사용자 정보를 프론트로 넘겨준다.
+              return res.status(200).json(user);
+            });
+          })(req, res, next);
+        });
+      4. req.login이 실행되면 passport/index.js에서 
+        - serializeUser : 유저 정보를 아이디 1개로 서버에 저장한다.
+        - deserializeUser : 세션 id를 통해 유저정보를 DB에서 가져온다.
+          module.exports = () => {
+            // req.login(user) 정보가 serializeUser의 user로 들어간다.
+            passport.serializeUser((user, done) => {
+              // 쿠키와 묶어줄 아이디만 저장한다.
+              // done의 첫번째는 서버에러 , 두번째는 성공정보
+              done(null, user.id);
+            });
+            passport.deserializeUser(async (id, done) => {
+              try {
+                // 쿠키와 묶인 아이디를 받아서 id를 통해 DB에서 유저 정보를 받아온다.
+                const user = await User.findOne({ where: { id } });
+                done(null, user);
+              } catch (error) {
+                console.error(error);
+                done(error);
+              }
+            });
+            local();
+          };

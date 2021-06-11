@@ -9,9 +9,22 @@
 const express = require('express');
 const app = express();
 const cors = require('cors');
+const dotenv = require('dotenv');
 
 // DB 등록
 const db = require('./models');
+
+// PassPort(로그인) 설정
+const passport = require('passport');
+const passportConfig = require('./passport');
+const session = require('express-session');
+const cookieParser = require('cookie-parser');
+
+// 패스포트, .env 사용
+passportConfig();
+dotenv.config();
+
+// DB연결
 db.sequelize
   .sync()
   .then(() => {
@@ -21,7 +34,7 @@ db.sequelize
 
 // 프론트의 데이터를 req.body 에 넣어주는 역할을 한다.
 // 라우터 위에 올려야한다. 위에서 아래로 읽기때문이다.
-app.use(express.json()); // 프론트에서 json형태를 req.body 에 넣어준다.
+app.use(express.json()); // 프론트정보를 서버에 전달할때 json형태로 req.body 에 넣어준다.
 app.use(express.urlencoded({ extended: true })); //form data를 req.body에 넣어준다.
 app.use(
   cors({
@@ -29,6 +42,19 @@ app.use(
     credentials: false,
   })
 );
+// Login & Session Middleware
+app.use(cookieParser());
+app.use(
+  session({
+    saveUninitialized: false,
+    resave: false,
+    // 쿠키랑 secret문자를 통해 id를 복원할수 있다.
+    // 문자가 노출되면 해킹의 위험이 있다.
+    secret: process.env.COOKIE_SECRET,
+  })
+);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Import Router
 const postRouter = require('./routes/post');
