@@ -38,7 +38,7 @@ app.use(express.json()); // 프론트정보를 서버에 전달할때 json형태
 app.use(express.urlencoded({ extended: true })); //form data를 req.body에 넣어준다.
 app.use(
   cors({
-    origin: true,
+    origin: '*',
     credentials: false,
   })
 );

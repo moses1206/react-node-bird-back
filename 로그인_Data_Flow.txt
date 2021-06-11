@@ -82,11 +82,14 @@ const onSubmitForm = useCallback(() => {
   
     2.성공하면
     if (result) {
-      // true면 서버에러는 null , 프론트에 사용자(user) 정보를 넘겨준다.
+      // true면 서버에러는 null
+      // done하는 순간 router의 밑에 passport.authenticate가 실행된다.
+      // passport 에 user 정보가 넘어간다.
       return done(null, user);
     }
 
-    3. 라우터에서 다음으로 넘어가고 패스포트 로그인을 시도한다.      
+    3. 라우터에서 다음으로 넘어가고 패스포트 로그인을 시도한다.
+    router.post('/login', (req, res, next) => {      
         passport.authenticate('local', (err, user, info) => {
             // 서버에러가 발생한다면
             if (err) {
@@ -99,34 +102,69 @@ const onSubmitForm = useCallback(() => {
             }
             // 성공하게 되면 패스포트 로그인을 시도한다.
             return req.login(user, async (loginErr) => {
+              #####################################################################
+               req.login이 실행되면 passport/index.js에서 deserializeUser가 실행되면서
+               DB에서 받은 데이터를 user에 담는다
+
+                  - serializeUser : 유저 정보를 아이디 1개로 서버에 저장한다.
+                  - deserializeUser : 세션 id를 통해 유저정보를 DB에서 가져온다.
+
+                    module.exports = () => {
+                      // req.login(user) 정보가 serializeUser의 user로 들어간다.
+                      passport.serializeUser((user, done) => {
+                        // 쿠키와 묶어줄 아이디만 저장한다.
+                        // done의 첫번째는 서버에러 , 두번째는 성공정보
+                        done(null, user.id);
+                      });
+                      passport.deserializeUser(async (id, done) => {
+                        try {
+                          // 쿠키와 묶인 아이디를 받아서 id를 통해 DB에서 유저 정보를 받아온다.
+                          const user = await User.findOne({ where: { id } });
+                          done(null, user);
+                        } catch (error) {
+                          console.error(error);
+                          done(error);
+                        }
+                      });
+                      local();
+                    };
+              #####################################################################
               if (loginErr) {
                 console.error(loginErr);
                 return next(loginErr);
               }
               // 사용자 정보를 프론트로 넘겨준다.
+              // deserializeUser에서 받은 user 정보를 프론트서버로 넘긴다.
               return res.status(200).json(user);
             });
           })(req, res, next);
         });
-      4. req.login이 실행되면 passport/index.js에서 
-        - serializeUser : 유저 정보를 아이디 1개로 서버에 저장한다.
-        - deserializeUser : 세션 id를 통해 유저정보를 DB에서 가져온다.
-          module.exports = () => {
-            // req.login(user) 정보가 serializeUser의 user로 들어간다.
-            passport.serializeUser((user, done) => {
-              // 쿠키와 묶어줄 아이디만 저장한다.
-              // done의 첫번째는 서버에러 , 두번째는 성공정보
-              done(null, user.id);
-            });
-            passport.deserializeUser(async (id, done) => {
-              try {
-                // 쿠키와 묶인 아이디를 받아서 id를 통해 DB에서 유저 정보를 받아온다.
-                const user = await User.findOne({ where: { id } });
-                done(null, user);
-              } catch (error) {
-                console.error(error);
-                done(error);
-              }
-            });
-            local();
-          };
+      
+
+        4. 서버에서 user로 데이터를 넘기면 
+
+          Saga에서 result.data로 넘겨진 데이터가 data에 담기고 
+
+          function* logIn(action) {
+            try {
+              const result = yield call(logInAPI, action.data);
+              yield put({
+                type: LOG_IN_SUCCESS,
+                data: result.data,
+              });
+            } catch (err) {
+              yield put({
+                type: LOG_IN_FAILURE,
+                error: err.response.data,
+              });
+            }
+          }
+
+          Reducer가 실행된다. 사가의 데이터가 action.data로 리듀서에서 
+          me로 저장되게 된다.
+
+          case LOG_IN_SUCCESS:
+            draft.logInLoading = false;
+            draft.logInDone = true;
+            draft.me = action.data;
+          break;

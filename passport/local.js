@@ -31,7 +31,9 @@ module.exports = () => {
           const result = await bcrypt.compare(password, user.password);
           // 3. result가 참이면 로그인을 성공시키면서 User정보를 담아서 넘겨준다.
           if (result) {
-            // true면 서버에러는 null , 프론트에 사용자(user) 정보를 넘겨준다.
+            // true면 서버에러는 null
+            // done하는 순간 router의 밑에 passport.authenticate가 실행된다.
+            // passport 에 user 정보가 넘어간다.
             return done(null, user);
           }
           // 4. 비밀번호가 틀렸다면 false , reason을 프론트로 보낸다.
