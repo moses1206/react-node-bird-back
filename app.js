@@ -10,6 +10,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors');
 const dotenv = require('dotenv');
+const morgan = require('morgan');
 
 // DB 등록
 const db = require('./models');
@@ -45,6 +46,8 @@ app.use(
     credentials: true,
   })
 );
+app.use(morgan('dev'));
+
 // Login & Session Middleware
 app.use(cookieParser());
 app.use(
@@ -61,10 +64,12 @@ app.use(passport.session());
 
 // Import Router
 const postRouter = require('./routes/post');
+const postsRouter = require('./routes/posts');
 const userRouter = require('./routes/user');
 
 // Use Router
 app.use('/post', postRouter);
+app.use('/posts', postsRouter);
 app.use('/user', userRouter);
 
 app.listen(3065, () => {

@@ -18,7 +18,14 @@ router.post('/', isLoggedIn, async (req, res, next) => {
     // Post에 있는 사진과 코멘트 , 유저정보를 붙여준다.
     const FullPost = await Post.findOne({
       where: { id: post.id },
-      include: [{ model: Image }, { model: Comment }, { model: User }],
+      include: [
+        { model: Image },
+        {
+          model: Comment,
+          include: [{ model: User, attributes: ['id', 'nickname'] }],
+        },
+        { model: User, attributes: ['id', 'nickname'] },
+      ],
     });
 
     res.status(201).json(FullPost);
@@ -47,10 +54,21 @@ router.post('/:postId/comment', isLoggedIn, async (req, res, next) => {
     const comment = await Comment.create({
       content: req.body.content,
       // PostId는 주소창의 params를 통해 가져온다.
-      PostId: req.params.postId,
+      PostId: parseInt(req.params.postId, 10),
       UserId: req.user.id,
     });
-    res.status(201).json(comment);
+
+    const fullComment = await Comment.findOne({
+      where: { id: comment.id },
+      include: [
+        {
+          model: User,
+          attributes: ['id', 'nickname'],
+        },
+      ],
+    });
+
+    res.status(201).json(fullComment);
   } catch (error) {
     console.error(error);
     next(error);
