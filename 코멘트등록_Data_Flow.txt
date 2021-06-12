@@ -1,0 +1,79 @@
+front   1. components/CommentForm.js
+            const onSubmitComment = useCallback(() => {
+                dispatch({
+                type: ADD_COMMENT_REQUEST,
+                data: { content: commentText, userId: id, postId: post.id },
+                });
+            }, [commentText, id]);
+        
+        saga    2. function* addComment(action) {
+                        try {
+                        const result = yield call(addCommentAPI, action.data);
+                        **************************************************************
+                            function addCommentAPI(data) {
+                                return axios.post(`/post/${data.postId}/comment`, data);
+                            }
+                        **************************************************************    
+                        yield put({
+                            type: ADD_COMMENT_SUCCESS,
+                            data: result.data,
+                        });
+                        } catch (err) {
+                        yield put({
+                            type: ADD_COMMENT_FAILURE,
+                            data: err.response.data,
+                        });
+                        }
+                    }
+backend     3. back/routes/post.js
+
+                @route   POST    /post/`${postId}`/comment
+                @desc    Create Comment
+                @access  Private
+                // 동적 주소를 만들기위해 parameter를 사용한다.(/:postId)
+
+                로그인을 하게 되면 serializeUser를 통해 서버에서 ID만 들고 있다가
+                라우터에 접근하게 되면 deserializeUser가 실행되고 req.user 정보를
+                서버에서 보내주게된다.
+
+                router.post('/:postId/comment', isLoggedIn, async (req, res, next) => {
+                    try {
+                      // 1. 포스트가 있는지 검사
+                      const post = await Post.findOne({
+                        where: { id: req.params.postId },
+                      });
+                  
+                      if (!post) {
+                        return res.status(403).send('존재하지 않는 게시글입니다.!!');
+                      }
+                  
+                      // 2. Create Post
+                      const comment = await Comment.create({
+                            content: req.body.content,
+                            PostId: req.params.postId,
+                            UserId: req.user.id,
+                      });
+                      res.status(201).json(comment);
+                    } catch (error) {
+                      console.error(error);
+                      next(error);
+                    }
+                  });
+
+front       4. saga/post.js
+                yield put({
+                    type: ADD_COMMENT_SUCCESS,
+                    data: result.data,
+
+                action.data를 리듀서로 넘긴다
+
+            5. reducer/post.js
+            action.data안에 PostId,UserId,content가 들어있다.
+            case ADD_COMMENT_SUCCESS: {
+                const post = draft.mainPosts.find((v) => v.id === action.data.PostId);
+                post.Comments.unshift(action.data);
+                draft.addCommentLoading = false;
+                draft.addCommentDone = true;
+                break;
+        
+        

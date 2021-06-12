@@ -1,0 +1,56 @@
+front   1. components/PostForm.js
+            const onSubmit = useCallback(() => {
+                dispatch(addPost(text));
+            }, [text]);
+        
+        saga    2. function* addPost(action) {
+                        try {
+                            const result = yield call(addPostAPI, action.data);
+                                ***************************************************
+                                    function addPostAPI(data) {
+                                        # 백엔드에 req.body.content로 보내기 위해 데이터 처리
+                                        return axios.post('/post', {content:data});
+                                    }
+                                ***************************************************
+backend     3. back/routes/post.js
+            @route   POST   /post
+            @desc    Create Post
+            @access  Private
+            router.post('/', async (req, res, next) => {
+                try {
+                    // 사가에서 보낸 데이터를 통해 Post를 생성하고
+                    // json(post)로 프론트에 보내준다.
+                    const post = await Post.create({
+                      content: req.body.content,
+                    });
+
+                    res.status(201).json(post);
+                } catch (error) {
+                    console.error(error);
+                    next(error);
+                }
+            });
+
+front       4. saga/post.js
+            // 데이터를 받아서 리듀서를 실행한다.
+            function* addPost(action) {
+                try {
+                    const result = yield call(addPostAPI, action.data);
+                    yield put({
+                        type: ADD_POST_SUCCESS,
+                        data: result.data,
+                });
+                    yield put({
+                        type: ADD_POST_TO_ME,
+                        data: result.data.id,
+                });
+
+            5. reducer/post.js
+
+            case ADD_POST_SUCCESS:
+                draft.addPostLoading = false;
+                draft.addPostDone = true;
+                draft.mainPosts.unshift(action.data);
+                break;
+        
+        

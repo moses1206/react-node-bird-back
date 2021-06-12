@@ -38,8 +38,11 @@ app.use(express.json()); // 프론트정보를 서버에 전달할때 json형태
 app.use(express.urlencoded({ extended: true })); //form data를 req.body에 넣어준다.
 app.use(
   cors({
-    origin: '*',
-    credentials: false,
+    // withcredentials true가 되면 origin의 주소는 정확하게
+    // 적어주어야한다. *를 쓰면 안된다.
+    origin: 'http://localhost:3060',
+    // 쿠키도 전달하고 싶다면
+    credentials: true,
   })
 );
 // Login & Session Middleware

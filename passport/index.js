@@ -12,6 +12,8 @@ module.exports = () => {
   });
 
   // 쿠키와 묶인 아이디를 받아서 id를 통해 DB에서 유저 정보를 받아온다.
+  // 라우터에 요청이 있을때마다 deserializeUser가 실행되고 req.user로
+  // 정보를 보내게 된다.
   passport.deserializeUser(async (id, done) => {
     try {
       const user = await User.findOne({ where: { id } });
