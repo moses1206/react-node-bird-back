@@ -7,6 +7,47 @@ const { isLoggedIn, isNotLoggedIn } = require('./middlewares.js');
 
 const router = express.Router();
 
+// @route   GET    /user
+// @desc    Get single User
+// @access  Private
+router.get('/', async (req, res, next) => {
+  try {
+    if (req.user) {
+      const fullUserWithoutPassword = await User.findOne({
+        // 유저를 찾고
+        where: { id: req.user.id },
+        // 패스워드만 빼고 가져오겠다.
+        attributes: {
+          exclude: ['password'],
+        },
+
+        // Followings,Followers 정보를 Model associate를 통해
+        // 정보를 추가하겠다.
+        include: [
+          {
+            model: Post,
+            attributes: ['id'],
+          },
+          {
+            model: User,
+            as: 'Followings',
+            attributes: ['id'],
+          },
+          {
+            model: User,
+            as: 'Followers',
+            attributes: ['id'],
+          },
+        ],
+      });
+      res.status(200).json(fullUserWithoutPassword);
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
 // @route   POST    /user/login
 // @desc    Login User
 // @access  Public
