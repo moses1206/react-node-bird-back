@@ -16,19 +16,34 @@ router.post('/', isLoggedIn, async (req, res, next) => {
 
     // 기본적인 post에는 content,UserId만 있으며 여기에
     // Post에 있는 사진과 코멘트 , 유저정보를 붙여준다.
-    const FullPost = await Post.findOne({
+    const fullPost = await Post.findOne({
       where: { id: post.id },
       include: [
-        { model: Image },
+        {
+          model: Image,
+        },
         {
           model: Comment,
-          include: [{ model: User, attributes: ['id', 'nickname'] }],
+          include: [
+            {
+              model: User, // 댓글 작성자
+              attributes: ['id', 'nickname'],
+            },
+          ],
         },
-        { model: User, attributes: ['id', 'nickname'] },
+        {
+          model: User, // 게시글 작성자
+          attributes: ['id', 'nickname'],
+        },
+        {
+          model: User, // 좋아요 누른 사람
+          as: 'Likers',
+          attributes: ['id'],
+        },
       ],
     });
 
-    res.status(201).json(FullPost);
+    res.status(201).json(fullPost);
   } catch (error) {
     console.error(error);
     next(error);
@@ -80,6 +95,42 @@ router.post('/:postId/comment', isLoggedIn, async (req, res, next) => {
 // @access  Private
 router.delete('/', isLoggedIn, (req, res) => {
   res.json({ id: 1 });
+});
+
+// @route   PATCH    /post/:postId/like
+// @desc    Add Like
+// @access  Private
+router.patch('/:postId/like', isLoggedIn, async (req, res, next) => {
+  // PATCH /post/1/like
+  try {
+    const post = await Post.findOne({ where: { id: req.params.postId } });
+    if (!post) {
+      return res.status(403).send('게시글이 존재하지 않습니다.');
+    }
+    await post.addLikers(req.user.id);
+    res.json({ PostId: post.id, UserId: req.user.id });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   DELETE    /post/:postId/like
+// @desc    Delete Like
+// @access  Private
+router.delete('/:postId/like', isLoggedIn, async (req, res, next) => {
+  // DELETE /post/1/like
+  try {
+    const post = await Post.findOne({ where: { id: req.params.postId } });
+    if (!post) {
+      return res.status(403).send('게시글이 존재하지 않습니다.');
+    }
+    await post.removeLikers(req.user.id);
+    res.json({ PostId: post.id, UserId: req.user.id });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
 });
 
 module.exports = router;
