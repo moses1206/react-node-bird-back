@@ -1,7 +1,7 @@
 // Mysql에서는 table이라고 하고 Sequelize에서는 Model이라고 한다.
 // Sequelize가 Mysql에서 엑셀 테이블을 자동으로 만들어준다.
-
-const { post } = require('../routes/post');
+const DataTypes = require('sequelize');
+const { Model } = DataTypes;
 
 module.exports = (sequelize, DataTypes) => {
   // 모델의 이름은 Post인데 Mysql에서는 자동으로 posts(소문자,복수)로 바뀐다
@@ -21,7 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       // 한글,이모티콘 저장
       // 이모티콘을 사용하기 위해서는 mb4를 붙여준다.
       charset: 'utf8mb4',
-      collate: 'utf8mb4_general_ci',
+      collate: 'utf8mb4_general_ci', // 이모티콘 저장
     }
   );
   Post.associate = (db) => {
@@ -31,12 +31,12 @@ module.exports = (sequelize, DataTypes) => {
     // 포스트의 작성자
     db.Post.belongsTo(db.User); //post.addUser
 
-    // post.addLikers , post.remveLikers , post.getLikers
     // 사용자와 게시글의 좋아요 관계
     // 게시글에 좋아요를 누른 유저가 여러명이 될 수 있고
     // 유저가 여러 게시글에 좋아요를 누를수 있따.
     // 항상 양쪽에 다 중간테이블명(Like)을 넣어주어야 한다.
     // 포스트에 좋아요를 누른사람을 별칭(Likers)로 찾아낸다.
+    // post.addLikers , post.remveLikers , post.getLikers
     db.Post.belongsToMany(db.User, { through: 'Like', as: 'Likers' });
 
     // post.addComments , post.removeComments , setComments(변경) , post.getComments

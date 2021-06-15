@@ -23,9 +23,14 @@ router.get('/', async (req, res, next) => {
           //   비밀번호만 빼고 가져온다
           attributes: ['id', 'nickname'],
         },
+
+        // 좋아요 누른사람.
         {
-          model: Image,
+          model: User,
+          as: 'Likers',
+          attributes: ['id'],
         },
+        // 코멘트 단 사람
         {
           model: Comment,
           include: [
@@ -36,8 +41,9 @@ router.get('/', async (req, res, next) => {
             },
           ],
         },
-        // 좋아요 누른사람.
-        { model: User, as: 'Likers', attributes: ['id'] },
+        {
+          model: Image,
+        },
       ],
     });
     res.status(200).json(posts);

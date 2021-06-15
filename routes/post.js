@@ -20,7 +20,13 @@ router.post('/', isLoggedIn, async (req, res, next) => {
       where: { id: post.id },
       include: [
         {
-          model: Image,
+          model: User, // 게시글 작성자
+          attributes: ['id', 'nickname'],
+        },
+        {
+          model: User, // 좋아요 누른 사람
+          as: 'Likers',
+          attributes: ['id'],
         },
         {
           model: Comment,
@@ -32,17 +38,11 @@ router.post('/', isLoggedIn, async (req, res, next) => {
           ],
         },
         {
-          model: User, // 게시글 작성자
-          attributes: ['id', 'nickname'],
-        },
-        {
-          model: User, // 좋아요 누른 사람
-          as: 'Likers',
-          attributes: ['id'],
+          model: Image,
         },
       ],
     });
-
+    console.log(fullPost);
     res.status(201).json(fullPost);
   } catch (error) {
     console.error(error);
@@ -100,13 +100,15 @@ router.delete('/', isLoggedIn, (req, res) => {
 // @route   PATCH    /post/:postId/like
 // @desc    Add Like
 // @access  Private
-router.patch('/:postId/like', isLoggedIn, async (req, res, next) => {
+router.patch('/:postId/like', async (req, res, next) => {
   // PATCH /post/1/like
   try {
+    // 1. 포스트가 있는지 검사
     const post = await Post.findOne({ where: { id: req.params.postId } });
     if (!post) {
       return res.status(403).send('게시글이 존재하지 않습니다.');
     }
+    // 관계 메소드
     await post.addLikers(req.user.id);
     res.json({ PostId: post.id, UserId: req.user.id });
   } catch (error) {
@@ -118,9 +120,9 @@ router.patch('/:postId/like', isLoggedIn, async (req, res, next) => {
 // @route   DELETE    /post/:postId/like
 // @desc    Delete Like
 // @access  Private
-router.delete('/:postId/like', isLoggedIn, async (req, res, next) => {
-  // DELETE /post/1/like
+router.delete('/:postId/like', async (req, res, next) => {
   try {
+    // 1. 포스트가 있는지 검사
     const post = await Post.findOne({ where: { id: req.params.postId } });
     if (!post) {
       return res.status(403).send('게시글이 존재하지 않습니다.');
