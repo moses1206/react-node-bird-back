@@ -157,4 +157,132 @@ router.post('/logout', isLoggedIn, (req, res) => {
   res.send('로그아웃 되었습니다!!');
 });
 
+// @route   PETCH    /user/nickname
+// @desc    Petch my nickname
+// @access  private
+router.patch('/nickname', isLoggedIn, async (req, res, next) => {
+  try {
+    // 시퀄라이즈에서 수정할때 update 메소드를 쓴다.
+    await User.update(
+      {
+        //내 아이디의 닉네임을 프론트에서 받은 닉네임으로 수정
+        nickname: req.body.nickname,
+      },
+      {
+        where: { id: req.user.id },
+      }
+    );
+    res.status(200).json({ nickname: req.body.nickname });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   PETCH    /user/:userid/follow
+// @desc    I Follow :/userid
+// @access  private
+router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 유저가 존재하는지 확인한다.
+    const user = await User.findOne({ where: { id: req.params.userId } });
+
+    if (!user) {
+      res.status(403).send('팔로우할 대상이 존재하지 않습니다..!!');
+    }
+
+    // 2. 데이터베이스에서 내가 팔로우할려는 아이디의 followers에 내 아이디를 추가한다.
+    await user.addFollowers(req.user.id);
+
+    res.status(200).json({ userId: parseInt(req.params.userId, 10) });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   DELETE    /user/:userid/follow
+// @desc    I unFollow :/userid
+// @access  private
+router.delete('/:userId/follow', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 유저가 존재하는지 확인한다.
+    const user = await User.findOne({ where: { id: req.params.userId } });
+
+    if (!user) {
+      res.status(403).send('언팔로우할 대상이 존재하지 않습니다..!!');
+    }
+
+    // 2. 내가 팔로우할려는 아이디의 followers에 내 아이디를 삭제한다.
+    await user.removeFollowers(req.user.id);
+    res.status(200).json({ userId: parseInt(req.params.userId, 10) });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   GET    /user/2/followers
+// @desc    Get My followers(나를 팔로우 한 사람)
+// @access  private
+router.get('/followers', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 나를 먼저 찾는다.
+    const user = await User.findOne({ where: { id: req.user.id } });
+
+    if (!user) {
+      res.status(403).send('팔로워를 찾을 수 없습니다.!!');
+    }
+
+    // 2. 데이터베이스에서 나를 팔로우한 사람을 가져온다.
+    const followers = await user.getFollowers();
+    res.status(200).json(followers);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   GET    /user/2/followings
+// @desc    Get My followerings(내가 팔로잉한 사람)
+// @access  private
+router.get('/followings', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 나를 먼저 찾는다.
+    const user = await User.findOne({ where: { id: req.user.id } });
+
+    if (!user) {
+      res.status(403).send('팔로잉을 찾을 수 없습니다.!!');
+    }
+
+    // 2. 데이터베이스에서 내가 팔로우 한 사람을 가져온다.
+    const followings = await user.getFollowings();
+    res.status(200).json(followings);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   DELETE    /user/follower/:userid
+// @desc    Delete my follower(나를 팔로잉 한 사람을 제거)
+// @access  private
+router.delete('/follower/:userid', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 나를 먼저 찾는다.
+    const user = await User.findOne({ where: { id: req.user.id } });
+
+    if (!user) {
+      res.status(403).send('차단할려는 사람을 찾을 수 없습니다.!!');
+    }
+
+    // 2. 데이터베이스에서 내가 팔로우 한 사람을 가져온다.
+    await user.removeFollowers(req.params.userId);
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
 module.exports = router;
