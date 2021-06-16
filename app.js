@@ -12,6 +12,9 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const morgan = require('morgan');
 
+// Upload Image Path
+const path = require('path');
+
 // DB 등록
 const db = require('./models');
 
@@ -32,6 +35,11 @@ db.sequelize
     console.log('DB 연결 성공');
   })
   .catch(console.error);
+
+// Upload Image middlewares Setting
+// react-nodebird-back + uploads 경로를 합쳐준다.
+// localhost:3065/react-nodebird-back/uploads
+app.use('/', express.static(path.join(__dirname, 'uploads')));
 
 // 프론트의 데이터를 req.body 에 넣어주는 역할을 한다.
 // 라우터 위에 올려야한다. 위에서 아래로 읽기때문이다.

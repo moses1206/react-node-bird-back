@@ -179,8 +179,8 @@ router.patch('/nickname', isLoggedIn, async (req, res, next) => {
   }
 });
 
-// @route   PETCH    /user/:userid/follow
-// @desc    I Follow :/userid
+// @route   PETCH    /user/1/follow
+// @desc    1번 유저 팔로우
 // @access  private
 router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
   try {
@@ -192,17 +192,18 @@ router.patch('/:userId/follow', isLoggedIn, async (req, res, next) => {
     }
 
     // 2. 데이터베이스에서 내가 팔로우할려는 아이디의 followers에 내 아이디를 추가한다.
+    // 내가 팔로우 버튼을 누르면 내가 팔로워가 된다.
     await user.addFollowers(req.user.id);
 
-    res.status(200).json({ userId: parseInt(req.params.userId, 10) });
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
   } catch (error) {
     console.error(error);
     next(error);
   }
 });
 
-// @route   DELETE    /user/:userid/follow
-// @desc    I unFollow :/userid
+// @route   DELETE    /user/1/follow
+// @desc    1번유저 언팔로우
 // @access  private
 router.delete('/:userId/follow', isLoggedIn, async (req, res, next) => {
   try {
@@ -214,15 +215,36 @@ router.delete('/:userId/follow', isLoggedIn, async (req, res, next) => {
     }
 
     // 2. 내가 팔로우할려는 아이디의 followers에 내 아이디를 삭제한다.
+    // 유저의 팔로우 아이디에 내 아이디를 삭제.
     await user.removeFollowers(req.user.id);
-    res.status(200).json({ userId: parseInt(req.params.userId, 10) });
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
   } catch (error) {
     console.error(error);
     next(error);
   }
 });
 
-// @route   GET    /user/2/followers
+// @route   DELETE    /user/1/follow
+// @desc    나를 팔로우한 사람을 내가 제거하기
+// @access  private
+router.delete('/follower/:userId', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 유저를 찾는다
+    const user = await User.findOne({ where: { id: req.params.userId } });
+
+    if (!user) {
+      res.status(403).send('대상이 존재하지 않습니다.!!');
+    }
+    // 2. 유저의 팔로잉즈에 내 아이디를 제거한다.
+    await user.removeFollowings(req.user.id);
+    res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   GET    /user/followers
 // @desc    Get My followers(나를 팔로우 한 사람)
 // @access  private
 router.get('/followers', isLoggedIn, async (req, res, next) => {
@@ -244,7 +266,7 @@ router.get('/followers', isLoggedIn, async (req, res, next) => {
 });
 
 // @route   GET    /user/2/followings
-// @desc    Get My followerings(내가 팔로잉한 사람)
+// @desc    Get My followings(내가 팔로잉한 사람)
 // @access  private
 router.get('/followings', isLoggedIn, async (req, res, next) => {
   try {

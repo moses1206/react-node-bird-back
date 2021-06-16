@@ -2,22 +2,71 @@ const express = require('express');
 const { Post, Comment, Image, User } = require('../models');
 const { isLoggedIn, isNotLoggedIn } = require('./middlewares');
 
+// Upload Images
+const multer = require('multer');
+const path = require('path');
+
+//Make Images Upload Folder
+const fs = require('fs');
+try {
+  fs.accessSync('uploads');
+} catch (error) {
+  console.log('uploads 폴더가 없으므로 생성합니다.');
+  fs.mkdirSync('uploads');
+}
+
 const router = express.Router();
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination(req, file, done) {
+      done(null, 'uploads');
+    },
+    filename(req, file, done) {
+      // 파일을 올릴때 중복을 막기위해 파일이름에 시간분초까지 넣어서 파일명을 만든다.
+
+      const ext = path.extname(file.originalname); //path를 통해 확장자 추출(.png)
+      const basename = path.basename(file.originalname, ext); //파일이름 추출 ( 사자머리)
+      done(null, basename + '_' + new Date().getTime() + ext); // 사자머리2106301252.png
+    },
+  }),
+  limits: { fileSize: 20 * 1024 * 1024 }, //20MB
+});
 
 // @route   POST    /post
 // @desc    Create a Post
 // @access  Private
-router.post('/', isLoggedIn, async (req, res, next) => {
+router.post('/', isLoggedIn, upload.none(), async (req, res, next) => {
   try {
     const post = await Post.create({
       content: req.body.content,
       UserId: req.user.id,
     });
 
+    // 이미지가 있다면
+    if (req.body.image) {
+      // 이미지가 여러개 있다면 Promise.all을 통해 한꺼번에 서버에 기록한다.
+      if (Array.isArray(req.body.image)) {
+        const images = await Promise.all(
+          req.body.image.map((image) => Image.create({ src: image }))
+        );
+        await post.addImages(images);
+      } else {
+        // 이미지가 1개만 있다면
+        const image = await Image.create({ src: req.body.image });
+        await post.addImages(image);
+      }
+    }
+
     // 기본적인 post에는 content,UserId만 있으며 여기에
     // Post에 있는 사진과 코멘트 , 유저정보를 붙여준다.
     const fullPost = await Post.findOne({
       where: { id: post.id },
+      include: [
+        {
+          model: Image,
+        },
+      ],
       include: [
         {
           model: User, // 게시글 작성자
@@ -49,6 +98,20 @@ router.post('/', isLoggedIn, async (req, res, next) => {
     next(error);
   }
 });
+
+// @route   POST    /post/images
+// @desc    Upload Images
+// @access  private
+router.post(
+  '/images',
+  isLoggedIn,
+  // 복수의 이미지 업로드.  upload.single('image') : 1장
+  upload.array('image'),
+  (req, res, next) => {
+    console.log(req.files);
+    res.json(req.files.map((v) => v.filename));
+  }
+);
 
 // @route   DELETE    /post/:postId
 // @desc    Delete a Post
