@@ -44,6 +44,18 @@ router.get('/', async (req, res, next) => {
         {
           model: Image,
         },
+        {
+          model: Post,
+          as: 'Retweet',
+          // 리트윗 게시글의 작성자와 이미지를 가져온다.
+          include: [
+            {
+              model: User,
+              attributes: ['id', 'nickname'],
+            },
+            { model: Image },
+          ],
+        },
       ],
     });
     res.status(200).json(posts);
