@@ -149,7 +149,7 @@ router.delete('/:postId', isLoggedIn, async (req, res, next) => {
 });
 
 // @route   GET    /post/:postId
-// @desc    Get a Post
+// @desc    Get single Post
 // @access  Private
 router.get('/:postId', async (req, res, next) => {
   // GET /post/1
@@ -196,6 +196,11 @@ router.get('/:postId', async (req, res, next) => {
               attributes: ['id', 'nickname'],
             },
           ],
+        },
+        {
+          model: User, // 좋아요 누른 사람
+          as: 'Likers',
+          attributes: ['id', 'nickname'],
         },
       ],
     });
