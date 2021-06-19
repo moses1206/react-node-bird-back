@@ -1,23 +1,20 @@
 const express = require('express');
 const { Op } = require('sequelize');
-const { Post, User, Image, Comment } = require('../models');
+
+const { Post, Image, User, Comment } = require('../models');
 
 const router = express.Router();
 
-// @route   GET    /posts
-// @desc    Get All Posts I wrote
-// @access  Public
 router.get('/', async (req, res, next) => {
+  // GET /posts
   try {
-    const where = {}; //초기로딩일때
-
+    const where = {};
     // 쿼리스트링을 받는 방법 , 초기로딩이 아닐때
-    // 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
     if (parseInt(req.query.lastId, 10)) {
+      // 초기 로딩이 아닐 때
       // 아이디가 lastId보다 작은수
-      where.id = { [Op.lt]: parseInt(req.query.lastId, 10) }; // 보다 작은수
-    }
-
+      where.id = { [Op.lt]: parseInt(req.query.lastId, 10) };
+    } // 21 20 19 18 17 16 15 14 13 12 11 10 9 8 7 6 5 4 3 2 1
     const posts = await Post.findAll({
       // where 안에 lastId보다 작은거라는 의미가 있따.
       where,
@@ -28,33 +25,30 @@ router.get('/', async (req, res, next) => {
         ['createdAt', 'DESC'],
         [Comment, 'createdAt', 'DESC'],
       ],
-      //   작성자 정보를 추가
       include: [
+        //   작성자 정보를 추가
         {
           model: User,
           //   비밀번호만 빼고 가져온다
           attributes: ['id', 'nickname'],
         },
-
-        // 좋아요 누른사람.
         {
-          model: User,
-          as: 'Likers',
-          attributes: ['id'],
+          model: Image,
         },
-        // 코멘트 단 사람
         {
+          // 코멘트 단 사람
           model: Comment,
           include: [
             {
               model: User,
-              //   코맨트를 작성한 사람의 비밀번호 빼고 가져온다.
               attributes: ['id', 'nickname'],
             },
           ],
         },
         {
-          model: Image,
+          model: User, // 좋아요 누른 사람
+          as: 'Likers',
+          attributes: ['id'],
         },
         {
           model: Post,
@@ -65,7 +59,9 @@ router.get('/', async (req, res, next) => {
               model: User,
               attributes: ['id', 'nickname'],
             },
-            { model: Image },
+            {
+              model: Image,
+            },
           ],
         },
       ],

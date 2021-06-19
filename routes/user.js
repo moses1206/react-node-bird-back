@@ -11,18 +11,14 @@ const router = express.Router();
 // @desc    Get single User
 // @access  Private
 router.get('/', async (req, res, next) => {
+  // GET /user
   try {
     if (req.user) {
       const fullUserWithoutPassword = await User.findOne({
-        // 유저를 찾고
         where: { id: req.user.id },
-        // 패스워드만 빼고 가져오겠다.
         attributes: {
           exclude: ['password'],
         },
-
-        // Followings,Followers 정보를 Model associate를 통해
-        // 정보를 추가하겠다.
         include: [
           {
             model: Post,
@@ -41,6 +37,54 @@ router.get('/', async (req, res, next) => {
         ],
       });
       res.status(200).json(fullUserWithoutPassword);
+    } else {
+      res.status(200).json(null);
+    }
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   GET    /user/:id
+// @desc    Get a User Info
+// @access  Private
+router.get('/:userId', async (req, res, next) => {
+  // GET /user
+  try {
+    const fullUserWithoutPassword = await User.findOne({
+      where: { id: req.params.userId },
+      attributes: {
+        exclude: ['password'],
+      },
+      include: [
+        {
+          model: Post,
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followings',
+          attributes: ['id'],
+        },
+        {
+          model: User,
+          as: 'Followers',
+          attributes: ['id'],
+        },
+      ],
+    });
+
+    if (fullUserWithoutPassword) {
+      // 시퀄라이즈에서 보내진 데이터는 Json 타입이 아니라서 변환해준다.
+      // 개인정보 예방을 위해 데이터를 최소화한다.
+      const data = fullUserWithoutPassword.toJSON();
+      data.Posts = data.Posts.length;
+      data.Followers = data.Followers.length;
+      data.Followings = data.Followings.length;
+      res.status(200).json(data);
+    } else {
+      res.status(404).json('존재하지 않는 아이디 입니다.!!');
     }
   } catch (error) {
     console.error(error);
