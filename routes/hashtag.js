@@ -18,6 +18,8 @@ router.get('/:hashtag', async (req, res, next) => {
       include: [
         {
           model: Hashtag,
+          // 프론트에서 encodeURIComponent로 넘어온 한글 주소데이터를 다시 변환해서
+          // 검색할 수 있게 해준다.
           where: { name: decodeURIComponent(req.params.hashtag) },
         },
         {
