@@ -47,6 +47,54 @@ router.get('/', async (req, res, next) => {
   }
 });
 
+// @route   GET    /user/followers
+// @desc    Get My followers(나를 팔로우 한 사람)
+// @access  private
+router.get('/followers', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 나를 먼저 찾는다.
+    const user = await User.findOne({ where: { id: req.user.id } });
+
+    if (!user) {
+      res.status(403).send('팔로워를 찾을 수 없습니다.!!');
+    }
+
+    // 2. 데이터베이스에서 나를 팔로우한 사람을 가져온다.
+    const followers = await user.getFollowers({
+      // 더보기 누를때마다 3명씩 더 불러온다.
+      limit: req.params.limit,
+    });
+    res.status(200).json(followers);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
+// @route   GET    /user/2/followings
+// @desc    Get My followings(내가 팔로잉한 사람)
+// @access  private
+router.get('/followings', isLoggedIn, async (req, res, next) => {
+  try {
+    // 1. 나를 먼저 찾는다.
+    const user = await User.findOne({ where: { id: req.user.id } });
+
+    if (!user) {
+      res.status(403).send('팔로잉을 찾을 수 없습니다.!!');
+    }
+
+    // 2. 데이터베이스에서 내가 팔로우 한 사람을 가져온다.
+    const followings = await user.getFollowings({
+      // 더보기 누를때마다 3명씩 더 불러온다.
+      limit: req.params.limit,
+    });
+    res.status(200).json(followings);
+  } catch (error) {
+    console.error(error);
+    next(error);
+  }
+});
+
 router.get('/:userId', async (req, res, next) => {
   // GET /user/3
   try {
@@ -345,48 +393,6 @@ router.delete('/follower/:userId', isLoggedIn, async (req, res, next) => {
     // 2. 유저의 팔로잉즈에 내 아이디를 제거한다.
     await user.removeFollowings(req.user.id);
     res.status(200).json({ UserId: parseInt(req.params.userId, 10) });
-  } catch (error) {
-    console.error(error);
-    next(error);
-  }
-});
-
-// @route   GET    /user/followers
-// @desc    Get My followers(나를 팔로우 한 사람)
-// @access  private
-router.get('/followers', isLoggedIn, async (req, res, next) => {
-  try {
-    // 1. 나를 먼저 찾는다.
-    const user = await User.findOne({ where: { id: req.user.id } });
-
-    if (!user) {
-      res.status(403).send('팔로워를 찾을 수 없습니다.!!');
-    }
-
-    // 2. 데이터베이스에서 나를 팔로우한 사람을 가져온다.
-    const followers = await user.getFollowers();
-    res.status(200).json(followers);
-  } catch (error) {
-    console.error(error);
-    next(error);
-  }
-});
-
-// @route   GET    /user/2/followings
-// @desc    Get My followings(내가 팔로잉한 사람)
-// @access  private
-router.get('/followings', isLoggedIn, async (req, res, next) => {
-  try {
-    // 1. 나를 먼저 찾는다.
-    const user = await User.findOne({ where: { id: req.user.id } });
-
-    if (!user) {
-      res.status(403).send('팔로잉을 찾을 수 없습니다.!!');
-    }
-
-    // 2. 데이터베이스에서 내가 팔로우 한 사람을 가져온다.
-    const followings = await user.getFollowings();
-    res.status(200).json(followings);
   } catch (error) {
     console.error(error);
     next(error);
