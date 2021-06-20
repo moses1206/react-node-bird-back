@@ -62,7 +62,7 @@ router.get('/followers', isLoggedIn, async (req, res, next) => {
     // 2. 데이터베이스에서 나를 팔로우한 사람을 가져온다.
     const followers = await user.getFollowers({
       // 더보기 누를때마다 3명씩 더 불러온다.
-      limit: req.params.limit,
+      limit: parseInt(req.query.limit, 10),
     });
     res.status(200).json(followers);
   } catch (error) {
@@ -86,7 +86,7 @@ router.get('/followings', isLoggedIn, async (req, res, next) => {
     // 2. 데이터베이스에서 내가 팔로우 한 사람을 가져온다.
     const followings = await user.getFollowings({
       // 더보기 누를때마다 3명씩 더 불러온다.
-      limit: req.params.limit,
+      limit: parseInt(req.query.limit, 10),
     });
     res.status(200).json(followings);
   } catch (error) {
